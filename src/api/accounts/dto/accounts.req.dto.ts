@@ -1,5 +1,5 @@
-import { Expose } from 'class-transformer';
-import { IsArray, IsEnum, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsEnum, IsString, ValidateNested } from 'class-validator';
 import { CURRENCY } from 'src/common/const/enum.const';
 import { DepositList } from 'src/model/entity/deposit-list.entity';
 
@@ -15,6 +15,8 @@ export class GetWalletInfoReqDTO {
 
 export class GetCroffleAddressReqDTO {
     @Expose({ name: 'depositList' })
+    @ValidateNested({ each: true })
+    @Type(() => DepositList)
     @IsArray()
     depositList: DepositList[];
 }

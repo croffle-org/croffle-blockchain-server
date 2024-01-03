@@ -1,5 +1,5 @@
-import { Expose } from 'class-transformer';
-import { IsArray, IsEnum, IsNumber, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsEnum, IsNumber, IsString, ValidateNested } from 'class-validator';
 import { CURRENCY } from 'src/common/const/enum.const';
 
 import { DepositList } from 'src/model/entity/deposit-list.entity';
@@ -8,6 +8,8 @@ import { GetDepositTransactionIdsResDTO } from 'src/api/deposit/dto/deposit.res.
 
 export class StoreDepositListReqDTO {
     @Expose({ name: 'depositList' })
+    @ValidateNested({ each: true })
+    @Type(() => DepositList)
     @IsArray()
     depositList: DepositList[];
 
@@ -18,6 +20,8 @@ export class StoreDepositListReqDTO {
 
 export class RemoveDuplicateTransactionIdsReqDTO extends GetDepositTransactionIdsResDTO {
     @Expose({ name: 'depositList' })
+    @ValidateNested({ each: true })
+    @Type(() => DepositList)
     @IsArray()
     depositList: DepositList[];
 }

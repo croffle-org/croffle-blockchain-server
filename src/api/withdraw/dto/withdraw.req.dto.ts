@@ -1,5 +1,5 @@
-import { Expose } from 'class-transformer';
-import { IsEnum, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsEnum, IsObject, IsString, ValidateNested } from 'class-validator';
 
 import { WithdrawList } from 'src/model/entity/withdraw-list.entity';
 import { CURRENCY } from 'src/common/const/enum.const';
@@ -16,5 +16,8 @@ export class GetTotalWithdrawAmountForTokensReqDTO {
 
 export class InsertRefundInformationReqDTO {
     @Expose({ name: 'withdrawList' })
+    @ValidateNested()
+    @Type(() => WithdrawList)
+    @IsObject()
     withdrawList: WithdrawList;
 }

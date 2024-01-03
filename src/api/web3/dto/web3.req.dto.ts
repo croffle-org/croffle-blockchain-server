@@ -1,5 +1,5 @@
-import { Expose } from 'class-transformer';
-import { IsBoolean, IsNumber, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsBoolean, IsNumber, IsObject, IsString, ValidateNested } from 'class-validator';
 
 import { DepositList } from 'src/model/entity/deposit-list.entity';
 
@@ -15,6 +15,9 @@ export class AdjustTotalSupplyReqDTO {
 
 export class TransferToUserReqDTO {
     @Expose({ name: 'deposit' })
+    @ValidateNested()
+    @Type(() => DepositList)
+    @IsObject()
     deposit: DepositList;
 }
 

@@ -1,5 +1,5 @@
-import { Expose } from 'class-transformer';
-import { IsArray, IsEnum, IsString } from 'class-validator';
+import { Expose, Type } from 'class-transformer';
+import { IsArray, IsEnum, IsString, ValidateNested } from 'class-validator';
 
 import { DepositList } from 'src/model/entity/deposit-list.entity';
 import { CURRENCY } from 'src/common/const/enum.const';
@@ -12,6 +12,8 @@ export class SetUpbitJwtReqDTO {
 
 export class GetTransactionFromAddressReqDTO {
     @Expose({ name: 'depositList' })
+    @ValidateNested({ each: true })
+    @Type(() => DepositList)
     @IsArray()
     depositList: DepositList[];
 }
