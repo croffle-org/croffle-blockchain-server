@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { TypeOrmModuleOptions, TypeOrmOptionsFactory } from '@nestjs/typeorm';
+import { LogLevel } from 'typeorm';
 
 import { TypeOrmLoggerConfig } from 'src/config/typeorm-logger/typeorm-logger.config';
 
@@ -21,7 +22,7 @@ export class MysqlTypeOrmConfig implements TypeOrmOptionsFactory {
 
     createTypeOrmOptions(): TypeOrmModuleOptions {
         return {
-            type: 'mysql',
+            type: 'mariadb',
             name: MysqlTypeOrmConfig.connectionName,
             host: process.env.MYSQL_HOST,
             port: parseInt(process.env.MYSQL_PORT, 10) || 3306,
@@ -30,8 +31,9 @@ export class MysqlTypeOrmConfig implements TypeOrmOptionsFactory {
             database: process.env.MYSQL_DATABASE,
             retryAttempts: 5,
             synchronize: false,
+            maxQueryExecutionTime: 10000,
             logging: true,
-            logger: TypeOrmLoggerConfig.forConnection(MysqlTypeOrmConfig.connectionName, 'all'),
+            logger: new TypeOrmLoggerConfig(process.env.CROFFLE_BLOCKCHAIN_SERVER_LOG_LEVEL_DB.split('|') as LogLevel[]),
             entities: [DepositList, AccountWallet, WithdrawList],
         };
     }

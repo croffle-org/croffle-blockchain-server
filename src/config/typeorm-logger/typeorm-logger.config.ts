@@ -1,74 +1,43 @@
-import { Injectable } from '@nestjs/common';
 import { Logger } from '@nestjs/common';
-import { Logger as TypeOrmLogger, QueryRunner } from 'typeorm';
-import { LoggerOptions as TypeOrmLoggerOptions } from 'typeorm/logger/LoggerOptions';
+import { QueryRunner, LogLevel, LogMessage, LogMessageType, LoggerOptions } from 'typeorm';
 
-/**
- * @dev
- * * TypeORM Custom Logger 설정
- */
+import { AbstractLogger } from 'typeorm';
 
-@Injectable()
-export class TypeOrmLoggerConfig implements TypeOrmLogger {
-    static forConnection(connectionName: string, options: TypeOrmLoggerOptions) {
-        const logger: Logger = new Logger(`TypeORM_${connectionName}`, { timestamp: true });
-        return new TypeOrmLoggerConfig(logger, options);
+export class TypeOrmLoggerConfig extends AbstractLogger {
+    private readonly logger: Logger = new Logger('TypeormLogger');
+
+    constructor(options?: LoggerOptions) {
+        super(options);
     }
 
-    constructor(private readonly logger: Logger, private readonly options: TypeOrmLoggerOptions) {
-        this.logger = logger;
-    }
+    protected writeLog(level: LogLevel, logMessage: LogMessage | LogMessage[], queryRunner?: QueryRunner) {
+        const messages = this.prepareLogMessages(logMessage, { highlightSql: true, appendParameterAsComment: true, addColonToPrefix: true });
 
-    logQuery(query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.options === 'all' || this.options === true || (this.options instanceof Array && this.options.indexOf('query') !== -1)) {
-            const sql = query + (parameters && parameters.length ? '-- PARAMETERS : ' + this.stringifyParams(parameters) : '');
-            this.logger.verbose('[logQuery] - query : ' + sql);
+        for (const message of messages) {
+            const logFunction = this.getLogFunction(level, message.type);
+            const fullMessage = message.prefix ? `${message.prefix} ${message.message}` : message.message;
+            logFunction(fullMessage);
         }
     }
 
-    logQueryError(error: string | Error, query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        if (this.options === 'all' || this.options === true || (this.options instanceof Array && this.options.indexOf('query') !== -1)) {
-            const sql = query + (parameters && parameters.length ? '-- PARAMETERS : ' + this.stringifyParams(parameters) : '');
-            this.logger.error('[logQueryError] - query faild : ' + sql);
-            this.logger.error('[logQueryError] - error : ' + error);
-        }
-    }
-
-    logQuerySlow(time: number, query: string, parameters?: any[], queryRunner?: QueryRunner) {
-        const sql = query + (parameters && parameters.length ? '-- PARAMETERS : ' + this.stringifyParams(parameters) : '');
-        this.logger.log('[logQuerySlow] - query is slow : ' + sql);
-        this.logger.log('[logQuerySlow] - exection time : ' + time);
-    }
-
-    logSchemaBuild(message: string, queryRunner?: QueryRunner) {
-        if (this.options === 'all' || (this.options instanceof Array && this.options.indexOf('schema') !== -1)) {
-            this.logger.log('[logSchemaBuild] - build message : ', message);
-        }
-    }
-
-    logMigration(message: string, queryRunner?: QueryRunner) {
-        this.logger.log('[logMigration] - migration message', message);
-    }
-
-    log(level: 'log' | 'info' | 'warn', message: any, queryRunner?: QueryRunner) {
-        switch (level) {
+    private getLogFunction(level: LogLevel, messageType?: LogMessageType): (...args: any[]) => void {
+        const effectiveLevel = messageType ?? level;
+        switch (effectiveLevel) {
             case 'log':
-                if (this.options === 'all' || (this.options instanceof Array && this.options.indexOf('log') !== -1)) this.logger.log('[log] - ' + message);
-                break;
+            case 'schema-build':
+            case 'migration':
+                return this.logger.log;
             case 'info':
-                if (this.options === 'all' || (this.options instanceof Array && this.options.indexOf('info') !== -1)) this.logger.debug('[log] - ' + message);
-                break;
+            case 'query':
+                return this.logger.verbose;
             case 'warn':
-                if (this.options === 'all' || (this.options instanceof Array && this.options.indexOf('warn') !== -1)) this.logger.warn('[log] - ' + message);
-                break;
-        }
-    }
-
-    protected stringifyParams(parameters: any[]) {
-        try {
-            return JSON.stringify(parameters);
-        } catch (error) {
-            return parameters;
+            case 'query-slow':
+                return this.logger.warn;
+            case 'error':
+            case 'query-error':
+                return this.logger.error;
+            default:
+                return this.logger.log;
         }
     }
 }
