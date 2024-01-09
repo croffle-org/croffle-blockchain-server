@@ -24,3 +24,19 @@ export enum REQUEST {
     GET = 'get',
     POST = 'post',
 }
+
+export enum TransactionStatus {
+    PAY = 'PAY',
+    REFUND = 'REFUND',
+    ERROR = 'ERROR',
+}
+
+export enum PayStatus {
+    WAIT = 'WAIT',
+    PAY = 'PAY',
+}
+
+export enum RefundStatus {
+    WAIT = 'WAIT',
+    FINISH = 'FINISH',
+}

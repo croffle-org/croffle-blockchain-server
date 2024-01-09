@@ -15,7 +15,8 @@ export class Web3Scheduler {
 
     private isRunning = false;
 
-    @Cron('*/3 * * * * *')
+    // CFL 발행량 관리 스케줄러
+    // @Cron('*/3 * * * * *')
     public async checkAmount() {
         if (this.isRunning) return;
 

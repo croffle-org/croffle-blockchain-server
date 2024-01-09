@@ -4,8 +4,11 @@ import { LogLevel } from 'typeorm';
 
 import { TypeOrmLoggerConfig } from 'src/config/typeorm-logger/typeorm-logger.config';
 
-import { DepositList } from 'src/model/entity/deposit-list.entity';
 import { AccountWallet } from 'src/model/entity/account-wallet.entity';
+import { DepositList } from 'src/model/entity/deposit-list.entity';
+import { Order } from 'src/model/entity/order.entity';
+import { OrderPay } from 'src/model/entity/order-pay.entity';
+import { Pay } from 'src/model/entity/pay.entity';
 import { WithdrawList } from 'src/model/entity/withdraw-list.entity';
 
 /**
@@ -34,7 +37,7 @@ export class MysqlTypeOrmConfig implements TypeOrmOptionsFactory {
             maxQueryExecutionTime: 10000,
             logging: true,
             logger: new TypeOrmLoggerConfig(process.env.CROFFLE_BLOCKCHAIN_SERVER_LOG_LEVEL_DB.split('|') as LogLevel[]),
-            entities: [DepositList, AccountWallet, WithdrawList],
+            entities: [AccountWallet, DepositList, Order, OrderPay, Pay, WithdrawList],
         };
     }
 }

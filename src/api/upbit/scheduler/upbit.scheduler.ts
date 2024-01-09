@@ -20,7 +20,7 @@ export class UpbitScheduler {
 
     private storeDepositListIsRunning = false;
 
-    // 업비트 입금 내역을 저장하는 스케줄러
+    // CFL 구매를 위한 업비트 입금 내역을 저장하는 스케줄러
     @Cron('*/3 * * * * *')
     public async storeDepositList() {
         if (this.storeDepositListIsRunning) return;

@@ -11,6 +11,7 @@ import { CacheConfig } from 'src/config/cache/cache.config';
 
 import { AccountsModule } from 'src/api/accounts/accounts.module';
 import { DepositModule } from 'src/api/deposit/deposit.module';
+import { OrderModule } from 'src/api/order/order.module';
 import { WithdrawModule } from 'src/api/withdraw/withdraw.module';
 import { UpbitModule } from 'src/api/upbit/upbit.module';
 import { Web3Module } from 'src/api/web3/web3.module';
@@ -18,6 +19,7 @@ import { Web3Module } from 'src/api/web3/web3.module';
 import { CroffleGateway } from 'src/websockets/croffle/gateway/croffle.gateway';
 
 import { AxiosHelper } from 'src/helper/axios/axios.helper';
+import { PayModule } from 'src/api/pay/pay.module';
 
 @Module({
     imports: [
@@ -26,6 +28,8 @@ import { AxiosHelper } from 'src/helper/axios/axios.helper';
         CacheModule.register({ useClass: CacheConfig }),
         AccountsModule,
         DepositModule,
+        OrderModule,
+        PayModule,
         WithdrawModule,
         UpbitModule,
         Web3Module,
