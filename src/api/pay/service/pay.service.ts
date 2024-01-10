@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { PayRepository } from 'src/api/pay/repository/pay.repository';
-import { Pay } from 'src/model/entity/pay.entity';
 
 import { plainToInstance } from 'class-transformer';
 import { InsertPayReqDTO } from 'src/api/pay/dto/pay.req.dto';

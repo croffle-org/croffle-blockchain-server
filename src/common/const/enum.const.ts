@@ -27,6 +27,7 @@ export enum REQUEST {
 
 export enum TransactionStatus {
     PAY = 'PAY',
+    EXCEED = 'EXCEED',
     REFUND = 'REFUND',
     ERROR = 'ERROR',
 }

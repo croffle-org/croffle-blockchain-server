@@ -16,11 +16,13 @@ export class OrderRepository extends Repository<Order> {
         super(Order, dataSource.createEntityManager());
     }
 
+    // query문 수정
     public async findOrderWithOrderPay(findOrderWithOrderPayReqDTO: FindOrderWithOrderPayReqDTO): Promise<Order> {
         try {
             return await this.createQueryBuilder('order')
-                .innerJoinAndSelect('order.orderPay', 'orderPay', 'orderPay.order_sq = order.sq AND orderPay.pay_status = :status', { status: PayStatus.WAIT })
+                .leftJoinAndSelect('order.orderPay', 'orderPay')
                 .where('order.account_sq = :account_sq', { account_sq: findOrderWithOrderPayReqDTO.account_sq })
+                .andWhere('orderPay.pay_status = :status', { status: PayStatus.WAIT })
                 .orderBy('order.insert_dttm', 'DESC')
                 .getOne();
         } catch (error) {

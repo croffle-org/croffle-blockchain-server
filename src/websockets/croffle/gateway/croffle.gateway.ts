@@ -4,20 +4,19 @@ import { WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server } from 'socket.io';
 
 import { WithdrawList } from 'src/model/entity/withdraw-list.entity';
-import { OrderPay } from 'src/model/entity/order-pay.entity';
-import { Pay } from 'src/model/entity/pay.entity';
 
 import { ConfigService } from '@nestjs/config';
 
 import { DepositService } from 'src/api/deposit/service/deposit.service';
 import { OrderService } from 'src/api/order/service/order.service';
+import { OrderPayService } from 'src/api/orderPay/service/orderPay.service';
 import { WithdrawService } from 'src/api/withdraw/service/withdraw.service';
 import { AccountsService } from 'src/api/accounts/service/accounts.service';
 import { PayService } from 'src/api/pay/service/pay.service';
 import { UpbitService } from 'src/api/upbit/service/upbit.service';
 import { Web3Service } from 'src/api/web3/service/web3.service';
 
-import { CURRENCY } from 'src/common/const/enum.const';
+import { CURRENCY, PayStatus, TransactionStatus } from 'src/common/const/enum.const';
 
 import { plainToInstance } from 'class-transformer';
 import { GetWalletInfoReqDTO } from 'src/api/accounts/dto/accounts.req.dto';
@@ -25,8 +24,9 @@ import { WithdrawReqDTO } from 'src/api/upbit/dto/upbit.req.dto';
 import { TransferToTotalSupplyManagerReqDTO } from 'src/api/web3/dto/web3.req.dto';
 import { GetTotalDepositAmountForTokensReqDTO } from 'src/api/deposit/dto/deposit.req.dto';
 import { GetTotalWithdrawAmountForTokensReqDTO, InsertRefundInformationReqDTO } from 'src/api/withdraw/dto/withdraw.req.dto';
-import { FindOrderWithOrderPayReqDTO } from 'src/api/order/dto/order.req.dto';
 import { InsertPayReqDTO } from 'src/api/pay/dto/pay.req.dto';
+import { FindOrderWithOrderPayReqDTO } from 'src/api/order/dto/order.req.dto';
+import { UpdateOrderPayReqDTO } from 'src/api/orderPay/dto/orderPay.req.dto';
 
 import { GetWalletInfoResDTO } from 'src/api/accounts/dto/accounts.res.dto';
 import { InsertPayResDTO } from 'src/api/pay/dto/pay.res.dto';
@@ -40,6 +40,7 @@ export class CroffleGateway implements OnModuleInit {
         private readonly configService: ConfigService,
         private readonly depositService: DepositService,
         private readonly orderService: OrderService,
+        private readonly orderPayService: OrderPayService,
         private readonly withdrawService: WithdrawService,
         private readonly accountsService: AccountsService,
         private readonly payService: PayService,
@@ -128,11 +129,38 @@ export class CroffleGateway implements OnModuleInit {
                 );
                 const insertPayResDTO: InsertPayResDTO = await this.payService.insertPay(insertPayReqDTO);
 
-                console.log(insertPayResDTO.pay.sq);
-
                 const findOrderWithOrderPayReqDTO = plainToInstance(FindOrderWithOrderPayReqDTO, { account_sq: getWalletInfoResDTO.walletInfo.sq }, { exposeUnsetFields: false });
                 const findOrderWithOrderPayResDTO = await this.orderService.findOrderWithOrderPay(findOrderWithOrderPayReqDTO);
-                console.log(findOrderWithOrderPayResDTO);
+
+                const updateOrderPayReqDTO = plainToInstance(UpdateOrderPayReqDTO, {
+                    order_pay_sq: findOrderWithOrderPayResDTO.orderPay.sq,
+                    pay_sq_list: findOrderWithOrderPayResDTO.orderPay.pay_sq_list === null ? insertPayResDTO.pay.sq.toString() : (findOrderWithOrderPayResDTO.orderPay.pay_sq_list += `,${insertPayResDTO.pay.sq}`),
+                    pay_price: findOrderWithOrderPayResDTO.orderPay.pay_price + Number(ethers.formatEther(value)),
+                    pay_status: findOrderWithOrderPayResDTO.orderPay.pay_price + Number(ethers.formatEther(value)) >= findOrderWithOrderPayResDTO.orderPay.total_price ? PayStatus.PAY : PayStatus.WAIT,
+                });
+                await this.orderPayService.updateOrderPay(updateOrderPayReqDTO);
+
+                if (findOrderWithOrderPayResDTO.orderPay.pay_price + Number(ethers.formatEther(value)) > findOrderWithOrderPayResDTO.orderPay.total_price) {
+                    // TODO : 초과 토큰 환불 추가
+                    const exceedAmount = findOrderWithOrderPayResDTO.orderPay.pay_price + Number(ethers.formatEther(value)) - findOrderWithOrderPayResDTO.orderPay.total_price;
+
+                    const exceedAmountInsertPayReqDTO = plainToInstance(
+                        InsertPayReqDTO,
+                        {
+                            pay: {
+                                account_sq: getWalletInfoResDTO.walletInfo.sq,
+                                from_address: to,
+                                to_address: from,
+                                txid: event.log.transactionHash,
+                                amount: exceedAmount,
+                                status: TransactionStatus.EXCEED,
+                            },
+                        },
+                        { exposeUnsetFields: false },
+                    );
+
+                    await this.payService.insertPay(exceedAmountInsertPayReqDTO);
+                }
             }
         });
     }

@@ -12,6 +12,7 @@ import { CacheConfig } from 'src/config/cache/cache.config';
 import { AccountsModule } from 'src/api/accounts/accounts.module';
 import { DepositModule } from 'src/api/deposit/deposit.module';
 import { OrderModule } from 'src/api/order/order.module';
+import { OrderPayModule } from 'src/api/orderPay/orderPay.module';
 import { WithdrawModule } from 'src/api/withdraw/withdraw.module';
 import { UpbitModule } from 'src/api/upbit/upbit.module';
 import { Web3Module } from 'src/api/web3/web3.module';
@@ -29,6 +30,7 @@ import { PayModule } from 'src/api/pay/pay.module';
         AccountsModule,
         DepositModule,
         OrderModule,
+        OrderPayModule,
         PayModule,
         WithdrawModule,
         UpbitModule,

@@ -16,7 +16,6 @@ export class PayRepository extends Repository<Pay> {
 
     public async insertPay(insertPayReqDTO: InsertPayReqDTO): Promise<Pay> {
         try {
-            console.log(insertPayReqDTO.pay);
             return await this.save(insertPayReqDTO.pay);
         } catch (error) {
             console.error(error);
