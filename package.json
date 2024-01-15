@@ -1,7 +1,7 @@
 {
-    "name": "croffle-openbank",
+    "name": "croffle-blockchain-server",
     "version": "0.0.1",
-    "description": "",
+    "description": "croffle-blockchain-server",
     "author": "",
     "private": true,
     "license": "UNLICENSED",
@@ -32,9 +32,12 @@
     "dependencies": {
         "@nestjs/common": "^9.0.0",
         "@nestjs/core": "^9.0.0",
+        "@nestjs/microservices": "^9.4.3",
         "@nestjs/platform-express": "^9.0.0",
         "@nestjs/platform-socket.io": "^9.3.12",
         "@nestjs/websockets": "^9.3.12",
+        "cross-env": "^7.0.3",
+        "kafkajs": "^2.2.4",
         "mysql2": "^3.5.2",
         "reflect-metadata": "^0.1.13",
         "rxjs": "^7.2.0"

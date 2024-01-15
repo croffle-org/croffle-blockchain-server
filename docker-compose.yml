@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+    croffle-blockchain:
+        container_name: croffle-blockchain
+        build:
+            # context: /Users/winter/Company/wafflestay/project/waffle-wallet-api
+            dockerfile: ./Dockerfile
+        # volumes:
+        # - type: bind
+        #   source: /Users/winter/Company/wafflestay/project/waffle-wallet-api
+        #   target: /app
+        tty: true
+        ports:
+            - '8080:8080'
+        # environment:
+        # NODE_ENV: 'development'
+        # RUN_MODE: 'nest'

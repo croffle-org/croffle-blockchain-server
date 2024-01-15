@@ -1,16 +1,17 @@
 import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { VersioningType } from '@nestjs/common';
+import { Transport } from '@nestjs/microservices';
 
 import { AppModule } from 'src/app.module';
 
 import { LogginInterceptor } from 'src/interceptor/logger.interceptor';
 import { validationPipeConfig } from 'src/util/validation.util';
-import { AllExceptionsFilter } from './filter/common.exception.filter';
+import { AllExceptionsFilter } from 'src/filter/common.exception.filter';
 
 async function bootstrap() {
-    // * 사용할 logger 레벨 설정
     const app = await NestFactory.create(AppModule);
 
+    // * 사용할 logger 레벨 설정
     // app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
     // * CORS 설정
@@ -28,7 +29,24 @@ async function bootstrap() {
     // * 예외처리 필터 설정
     app.useGlobalFilters(new AllExceptionsFilter(app.get(HttpAdapterHost)));
 
-    // * PORT 설정
+    // * Kakfa 설정
+    // app.connectMicroservice({
+    //     transport: Transport.KAFKA,
+    //     options: {
+    //         client: {
+    //             clientId: 'croffle',
+    //             brokers: ['localhost:9092'],
+    //         },
+    //         consumer: {
+    //             groupId: 'croffle-consumer',
+    //         },
+    //     },
+    // });
+
+    // * 마이크로서비스 실행
+    // await app.startAllMicroservices();
+
+    // * 서버 실행
     await app.listen(process.env['PORT']);
 }
 bootstrap();
