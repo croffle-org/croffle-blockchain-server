@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+    filebeat: # 'filebeat' 서비스를 정의합니다.
+        image: docker.elastic.co/beats/filebeat:8.8.2 # Filebeat 서비스에 사용할 Docker 이미지와 태그를 지정합니다.
+        volumes: # 호스트와 컨테이너 간에 파일 시스템을 공유하기 위한 볼륨 설정입니다.
+            - type: bind # 'bind mount' 유형의 볼륨을 사용합니다. 이는 호스트의 파일이나 디렉토리를 컨테이너 내부의 파일이나 디렉토리에 직접 연결합니다.
+              source: ./filebeat.yml # 호스트에서 Filebeat 설정 파일의 위치입니다.
+              target: /usr/share/filebeat/filebeat.yml # 컨테이너 내부에서 Filebeat 설정 파일이 위치할 경로입니다.
+            - type: bind
+              source: /Users/kimsanghun/Git/Suhwan/croffle/croffle-blockchain-server/logs # 호스트의 로그 파일이 저장된 디렉토리입니다.
+              target: /var/logs # 컨테이너 내부에서 로그 파일을 읽을 경로입니다.
+              read_only: true # 이 볼륨은 읽기 전용으로 설정됩니다. 즉, 컨테이너는 이 볼륨에 데이터를 쓸 수 없습니다.
+        command: filebeat -e # 컨테이너가 시작될 때 실행될 명령입니다. 여기서는 Filebeat를 실행하고 `-e` 플래그를 사용하여 표준 출력으로 로깅합니다.

@@ -14,7 +14,8 @@ ENV MYSQL_HOST=host.docker.internal
 
 EXPOSE 8080
 
-CMD ["npm", "run", "start:dev-dist"]
+RUN npm install --global pm2
 
-# docker build -t croffle .
-# docker run -d -p 8080:8080 croffle
+ARG ENVIRONMENT
+
+CMD ["pm2-runtime", "start", "ecosystem.config.js", "--env", "${ENVIRONMENT}"]

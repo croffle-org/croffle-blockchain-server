@@ -1,18 +1,14 @@
-version: '3'
+version: '3.8'
 
 services:
-    croffle-blockchain:
-        container_name: croffle-blockchain
+    blockchain-server:
         build:
-            # context: /Users/winter/Company/wafflestay/project/waffle-wallet-api
-            dockerfile: ./Dockerfile
-        # volumes:
-        # - type: bind
-        #   source: /Users/winter/Company/wafflestay/project/waffle-wallet-api
-        #   target: /app
-        tty: true
+            context: .
+            args:
+                ENVIRONMENT: ${ENVIRONMENT}
         ports:
-            - '8080:8080'
-        # environment:
-        # NODE_ENV: 'development'
-        # RUN_MODE: 'nest'
+            - '8081:8081'
+        environment:
+            MYSQL_HOST: host.docker.internal
+        volumes:
+            - /Users/kimsanghun/Git/Suhwan/croffle/croffle-blockchain-server/logs:/usr/src/app/logs
