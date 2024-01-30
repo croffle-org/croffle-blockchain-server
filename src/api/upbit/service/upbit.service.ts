@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 
+import { CustomLogger } from 'src/config/logger/custom.logger.config';
+
 import { DepositList } from 'src/model/entity/deposit-list.entity';
 
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -14,11 +16,16 @@ import { plainToInstance } from 'class-transformer';
 
 import { GetTransactionFromAddressReqDTO, SetUpbitJwtReqDTO, WithdrawReqDTO } from 'src/api/upbit/dto/upbit.req.dto';
 import { GetKrwAmountResDTO, GetMaticPriceResDTO, GetRecentUpbitMaticDepositsResDTO, GetTransactionFromAddressResDTO, SetUpbitJwtResDTO } from 'src/api/upbit/dto/upbit.res.dto';
-import { AixosGetRequestReqDTO, UpbitGetRequestReqDTO, UpbitPostRequestReqDTO } from 'src/helper/axios/dto/axios.req.dto';
+import { AxiosGetRequestReqDTO, UpbitGetRequestReqDTO, UpbitPostRequestReqDTO } from 'src/helper/axios/dto/axios.req.dto';
 
 @Injectable()
 export class UpbitService {
-    constructor(@Inject(CACHE_MANAGER) private readonly cacheManager: Cache, private readonly axiosHelper: AxiosHelper) {}
+    constructor(
+        @Inject('CROFFLE_BLOCKCHAIN_SERVER_LOG')
+        private readonly logger: CustomLogger,
+        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
+        private readonly axiosHelper: AxiosHelper,
+    ) {}
 
     /**
      * @dev Retrieves the Upbit JWT (JSON Web Token) from the cache manager.
@@ -31,8 +38,8 @@ export class UpbitService {
             const token = await this.cacheManager.get('token');
             return plainToInstance(SetUpbitJwtResDTO, { token }, { exposeUnsetFields: false });
         } catch (error) {
-            console.error(error.message);
-            throw new ResImpl(SET_ACCESS_TOKEN_FAILED);
+            this.logger.logError(this.constructor.name, this.getUpbitJwt.name, error);
+            throw new ResImpl(GET_ACCESS_TOKEN_FAILED);
         }
     }
 
@@ -46,8 +53,8 @@ export class UpbitService {
         try {
             await this.cacheManager.set('token', setUpbitJwtReqDTO.token, 0);
         } catch (error) {
-            console.error(error.message);
-            throw new ResImpl(GET_ACCESS_TOKEN_FAILED);
+            this.logger.logError(this.constructor.name, this.setUpbitJwt.name, error);
+            throw new ResImpl(SET_ACCESS_TOKEN_FAILED);
         }
     }
 
@@ -65,7 +72,7 @@ export class UpbitService {
 
             return plainToInstance(GetKrwAmountResDTO, { amount: Math.floor(result.balance) }, { exposeUnsetFields: false });
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.getKrwAmount.name, error);
             throw new ResImpl(GET_KRW_BALANCE_FAILED);
         }
     }
@@ -83,7 +90,7 @@ export class UpbitService {
 
             return plainToInstance(GetMaticPriceResDTO, { token_price: response.trade_price }, { exposeUnsetFields: false });
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.getMaticPrice.name, error);
             throw new ResImpl(GET_TOKEN_PRICE_FAILED);
         }
     }
@@ -103,8 +110,8 @@ export class UpbitService {
 
         try {
             for (const deposit of getTransactionFromAddressReqDTO.depositList) {
-                const aixosGetRequestReqDTO = plainToInstance(
-                    AixosGetRequestReqDTO,
+                const axiosGetRequestReqDTO = plainToInstance(
+                    AxiosGetRequestReqDTO,
                     {
                         url: `https://ccx.upbit.com/api/v1/transactions/internal?currency=MATIC&txid=${deposit.txid}`,
                         header: { Authorization: `Bearer ${token}` },
@@ -112,13 +119,13 @@ export class UpbitService {
                     { exposeUnsetFields: false },
                 );
 
-                const { response: withdraw } = await this.axiosHelper.aixosGetRequest(aixosGetRequestReqDTO);
+                const { response: withdraw } = await this.axiosHelper.axiosGetRequest(axiosGetRequestReqDTO);
                 depositsListWithFromAddress.push(plainToInstance(DepositList, { ...deposit, upbit_address: withdraw.address }, { exposeUnsetFields: false }));
             }
 
             return plainToInstance(GetTransactionFromAddressResDTO, { depositsListWithFromAddress }, { exposeUnsetFields: false });
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.getTransactionFromAddress.name, error);
             throw new ResImpl(GET_TRANSACTION_DETAIL_FAILED);
         }
     }
@@ -135,12 +142,12 @@ export class UpbitService {
             const response = await this.axiosHelper.upbitGetRequest(upbitGetRequestReqDTO);
 
             const recentDepositList = response.filter((transaction) => {
-                return transaction.txid.startsWith('upbit') && new Date(transaction.done_at).getTime() > Date.now() - 2 * 60 * 60 * 1000;
+                return transaction.txid.startsWith('upbit') && new Date(transaction.done_at).getTime() > Date.now() - 10000 * 60 * 60 * 1000;
             });
 
             return plainToInstance(GetRecentUpbitMaticDepositsResDTO, { recentDepositList }, { exposeUnsetFields: false });
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.getRecentUpbitMaticDeposits.name, error);
             throw new ResImpl(GET_TOKEN_DEPOSITS_FAILED);
         }
     }
@@ -167,7 +174,7 @@ export class UpbitService {
             const upbitPostRequestReqDTO = plainToInstance(UpbitPostRequestReqDTO, { endpoint: '/withdraws/coin', body }, { exposeUnsetFields: false });
             await this.axiosHelper.upbitPostRequest(upbitPostRequestReqDTO);
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.withdraw.name, error);
             throw new ResImpl(TOKEN_WITHDRAW_FAILED);
         }
     }

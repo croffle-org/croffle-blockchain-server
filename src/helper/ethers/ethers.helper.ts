@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { ConfigService } from '@nestjs/config';
 
@@ -7,48 +7,46 @@ import { ConnectContractWithWalletReqDTO, SendTransactionReqDTO } from 'src/help
 import { AdjustTotalSupplyReqDTO, TransferToTotalSupplyManagerReqDTO, TransferToUserReqDTO } from 'src/api/web3/dto/web3.req.dto';
 
 import { ResImpl } from 'src/common/res/res.implement';
-import { CONTRACT_CONNECT_FAILED, GET_TOTALSUPPLY_FAILED, SEND_TRANSACTION_FAILED } from 'src/common/const/error.const';
+import { ADJUST_TOTALSUPPLY_FAILED, GET_TOTALSUPPLY_FAILED, SEND_TRANSACTION_FAILED, TRANSFER_TO_TOTALSUPPLY_MANAGER_FAILED, TRANSFER_TO_USER_FAILED } from 'src/common/const/error.const';
 
 import { METHODS } from 'src/common/const/enum.const';
 
 import { ethers } from 'ethers';
 import fs from 'fs';
+import { CustomLogger } from 'src/config/logger/custom.logger.config';
 
 @Injectable()
 export class EthersHelper {
-    constructor(private readonly configService: ConfigService) {}
+    constructor(
+        @Inject('CROFFLE_BLOCKCHAIN_SERVER_LOG')
+        private readonly logger: CustomLogger,
+        private readonly configService: ConfigService,
+    ) {}
 
     private readonly CROFFLE_TOTALSUPPLY_MANAGER: string = this.configService.get<string>('CROFFLE_TOTALSUPPLY_MANAGER');
     private readonly CROFFLE_TOTALSUPPLY_MANAGER_PRIVATEKEY: string = this.configService.get<string>('CROFFLE_TOTALSUPPLY_MANAGER_PRIVATEKEY');
     private readonly CROFFLE_PROPOSED_OWNER_PRIVATEKEY: string = this.configService.get<string>('CROFFLE_PROPOSED_OWNER_PRIVATEKEY');
 
     private readonly CROFFLE_CHAIN_RPC: string = this.configService.get<string>('CROFFLE_CHAIN_RPC');
-    private readonly PROXYT_CONTRACT: string = this.configService.get<string>('PROXYT_CONTRACT');
+    private readonly PROXY_CONTRACT: string = this.configService.get<string>('PROXY_CONTRACT');
 
     private readonly provider: ethers.JsonRpcProvider = new ethers.JsonRpcProvider(this.CROFFLE_CHAIN_RPC);
     private readonly abi: any[] = JSON.parse(fs.readFileSync(`src/config/abi/CroffleStableTokenV1.abi.json`, 'utf8'));
-    private readonly contract: ethers.Contract = new ethers.Contract(this.PROXYT_CONTRACT, this.abi, this.provider);
+    private readonly contract: ethers.Contract = new ethers.Contract(this.PROXY_CONTRACT, this.abi, this.provider);
 
-    private async connectContractWithWallet(connectContractWithWalletReqDTO: ConnectContractWithWalletReqDTO): Promise<ethers.BaseContract> {
-        try {
-            const wallet = new ethers.Wallet(connectContractWithWalletReqDTO.privateKey, this.provider);
-
-            return this.contract.connect(wallet);
-        } catch (error) {
-            console.error(error.message);
-            throw new ResImpl(CONTRACT_CONNECT_FAILED);
-        }
+    private connectContractWithWallet(connectContractWithWalletReqDTO: ConnectContractWithWalletReqDTO): ethers.BaseContract {
+        const wallet = new ethers.Wallet(connectContractWithWalletReqDTO.privateKey, this.provider);
+        return this.contract.connect(wallet);
     }
 
     private async sendTransaction(sendTransactionReqDTO: SendTransactionReqDTO): Promise<void> {
         try {
             const connectContractWithWalletReqDTO = plainToInstance(ConnectContractWithWalletReqDTO, { privateKey: sendTransactionReqDTO.privateKey }, { exposeUnsetFields: false });
-            const contractWithSigner = await this.connectContractWithWallet(connectContractWithWalletReqDTO);
+            const contractWithSigner = this.connectContractWithWallet(connectContractWithWalletReqDTO);
 
             const transaction = await contractWithSigner[sendTransactionReqDTO.method](...sendTransactionReqDTO.params, { gasLimit: 300000 });
             await transaction.wait();
         } catch (error) {
-            console.error(error.message);
             throw new ResImpl(SEND_TRANSACTION_FAILED);
         }
     }
@@ -56,10 +54,9 @@ export class EthersHelper {
     public async getTotalSupply(): Promise<number> {
         try {
             const totalSupply: bigint = await this.contract.totalSupply();
-
             return Math.floor(Number(ethers.formatEther(totalSupply)));
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.getTotalSupply.name, error);
             throw new ResImpl(GET_TOTALSUPPLY_FAILED);
         }
     }
@@ -69,13 +66,18 @@ export class EthersHelper {
             SendTransactionReqDTO,
             {
                 privateKey: this.CROFFLE_TOTALSUPPLY_MANAGER_PRIVATEKEY,
-                method: adjustTotalSupplyReqDTO.increase ? METHODS.INCREASETOTALSUPPLY : METHODS.DECREASETOTALSUPPLY,
+                method: adjustTotalSupplyReqDTO.increase ? METHODS.INCREASE_TOTALSUPPLY : METHODS.DECREASE_TOTALSUPPLY,
                 params: [ethers.parseUnits(adjustTotalSupplyReqDTO.amount.toString(), 'ether')],
             },
             { exposeUnsetFields: false },
         );
 
-        await this.sendTransaction(sendTransactionReqDTO);
+        try {
+            await this.sendTransaction(sendTransactionReqDTO);
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.adjustTotalSupply.name, error);
+            throw new ResImpl(ADJUST_TOTALSUPPLY_FAILED);
+        }
     }
 
     public async transferToUser(transferToUserReqDTO: TransferToUserReqDTO): Promise<void> {
@@ -89,7 +91,12 @@ export class EthersHelper {
             { exposeUnsetFields: false },
         );
 
-        await this.sendTransaction(sendTransactionReqDTO);
+        try {
+            await this.sendTransaction(sendTransactionReqDTO);
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.transferToUser.name, error);
+            throw new ResImpl(TRANSFER_TO_USER_FAILED);
+        }
     }
 
     public async transferToTotalSupplyManager(transferToTotalSupplyManagerReqDTO: TransferToTotalSupplyManagerReqDTO): Promise<void> {
@@ -103,6 +110,11 @@ export class EthersHelper {
             { exposeUnsetFields: false },
         );
 
-        await this.sendTransaction(sendTransactionReqDTO);
+        try {
+            await this.sendTransaction(sendTransactionReqDTO);
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.transferToTotalSupplyManager.name, error);
+            throw new ResImpl(TRANSFER_TO_TOTALSUPPLY_MANAGER_FAILED);
+        }
     }
 }

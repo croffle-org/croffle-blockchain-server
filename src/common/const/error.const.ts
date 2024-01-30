@@ -16,9 +16,11 @@ export const INSERT_FAILED: Res = { code: 1002, message: '데이터베이스에 
 export const UPDATE_FAILED: Res = { code: 1003, message: '데이터베이스에 데이터를 변경하지 못했습니다.' };
 
 // * web3
-export const CONTRACT_CONNECT_FAILED: Res = { code: 2001, message: '컨트랙트 연결에 실패하였습니다.' };
-export const SEND_TRANSACTION_FAILED: Res = { code: 2002, message: '트랜잭션을 보내는데 실패하였습니다.' };
-export const GET_TOTALSUPPLY_FAILED: Res = { code: 2003, message: '총 발행량을 조회하는데 실패하였습니다.' };
+export const SEND_TRANSACTION_FAILED: Res = { code: 2001, message: '트랜잭션을 보내는데 실패하였습니다.' };
+export const GET_TOTALSUPPLY_FAILED: Res = { code: 2002, message: '총 발행량을 조회하는데 실패하였습니다.' };
+export const ADJUST_TOTALSUPPLY_FAILED: Res = { code: 2003, message: '총 발행량을 조절하는데 실패하였습니다.' };
+export const TRANSFER_TO_USER_FAILED: Res = { code: 2004, message: '사용자에게 토큰을 전송하는데 실패하였습니다.' };
+export const TRANSFER_TO_TOTALSUPPLY_MANAGER_FAILED: Res = { code: 2005, message: '총 공급량 관리자에게 토큰을 전송하는데 실패하였습니다.' };
 
 // * upbit
 export const GET_ACCESS_TOKEN_FAILED: Res = { code: 3001, message: 'Upbit Access 토큰을 조회하는데 실패하였습니다.' };

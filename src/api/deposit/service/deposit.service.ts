@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { DepositListRepository } from 'src/api/deposit/repository/deposit.repository';
@@ -7,11 +7,14 @@ import { DepositList } from 'src/model/entity/deposit-list.entity';
 import { plainToInstance } from 'class-transformer';
 
 import { GetTotalDepositAmountForTokensReqDTO, RemoveDuplicateTransactionIdsReqDTO, StoreDepositListReqDTO, UpdateDepositStatusReqDTO } from 'src/api/deposit/dto/deposit.req.dto';
-import { GetDepositTransactionIdsResDTO, GetPendingDepositsResDTO, RemoveDuplicateTransactionIdsResDTO } from 'src/api/deposit/dto/deposit.res.dto';
+import { getPendingDepositTransactionIdsResDTO, GetPendingDepositsResDTO, RemoveDuplicateTransactionIdsResDTO, GetTotalDepositAmountForTokensResDTO } from 'src/api/deposit/dto/deposit.res.dto';
+import { CustomLogger } from 'src/config/logger/custom.logger.config';
 
 @Injectable()
 export class DepositService {
     constructor(
+        @Inject('CROFFLE_BLOCKCHAIN_SERVER_LOG')
+        private readonly logger: CustomLogger,
         @InjectRepository(DepositListRepository)
         private readonly depositList: DepositListRepository,
     ) {}
@@ -28,7 +31,12 @@ export class DepositService {
             plainToInstance(DepositList, { ...deposit, krw_amount: Number(deposit.amount) * storeDepositListReqDTO.maticPrice, token_price: storeDepositListReqDTO.maticPrice }, { exposeUnsetFields: false }),
         );
 
-        await this.depositList.storeDepositList(storeDepositListReqDTO);
+        try {
+            await this.depositList.storeDepositList(storeDepositListReqDTO);
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.storeDepositList.name, error);
+            throw error;
+        }
     }
 
     /**
@@ -38,20 +46,29 @@ export class DepositService {
      * @returns {DepositList[]} GetPendingDepositsResDTO.pendingDepositList - List of deposits that are currently pending.
      */
     public async getPendingDeposits(): Promise<GetPendingDepositsResDTO> {
-        const pendingDepositList: DepositList[] = await this.depositList.getPendingDeposits();
-        return plainToInstance(GetPendingDepositsResDTO, { pendingDepositList }, { exposeUnsetFields: false });
+        try {
+            const pendingDepositList: DepositList[] = await this.depositList.getPendingDeposits();
+            return plainToInstance(GetPendingDepositsResDTO, { pendingDepositList }, { exposeUnsetFields: false });
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.getPendingDeposits.name, error);
+            throw error;
+        }
     }
 
     /**
      * @dev Retrieves a list of transaction IDs for deposits that are currently pending.
      *
-     * @returns {GetDepositTransactionIdsResDTO} A data transfer object containing an array of pending deposit transaction IDs.
+     * @returns {getPendingDepositTransactionIdsResDTO} A data transfer object containing an array of pending deposit transaction IDs.
      * @returns {string[]} GetDepositTransactionIdsResDTO.transactionsIds - An array of strings, each representing a transaction ID of a pending deposit.
      */
-    public async getDepositTransactionIds(): Promise<GetDepositTransactionIdsResDTO> {
-        const depositTransactionIds: DepositList[] = await this.depositList.getPendingDepositTransactionIds();
-
-        return plainToInstance(GetDepositTransactionIdsResDTO, { depositTransactionIds }, { exposeUnsetFields: false });
+    public async getPendingDepositTransactionIds(): Promise<getPendingDepositTransactionIdsResDTO> {
+        try {
+            const depositTransactionIds: DepositList[] = await this.depositList.getPendingDepositTransactionIds();
+            return plainToInstance(getPendingDepositTransactionIdsResDTO, { depositTransactionIds }, { exposeUnsetFields: false });
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.getPendingDepositTransactionIds.name, error);
+            throw error;
+        }
     }
 
     /**
@@ -64,33 +81,27 @@ export class DepositService {
      * @returns {Promise<RemoveDuplicateTransactionIdsResDTO>} Returns an object containing the filtered list of deposits without duplicate transaction IDs.
      * @returns {DepositList[]} RemoveDuplicateTransactionIdsResDTO.filterDepositList - List of deposits after removing ones with duplicate transaction IDs.
      */
-    public async removeDuplicateTransactionIds(removeDuplicateTransactionIdsReqDTO: RemoveDuplicateTransactionIdsReqDTO): Promise<RemoveDuplicateTransactionIdsResDTO> {
-        try {
-            const filterDepositList: DepositList[] = [];
+    public removeDuplicateTransactionIds(removeDuplicateTransactionIdsReqDTO: RemoveDuplicateTransactionIdsReqDTO): RemoveDuplicateTransactionIdsResDTO {
+        const filterDepositList: DepositList[] = [];
 
-            for (let i = 0; i < removeDuplicateTransactionIdsReqDTO.depositList.length; i++) {
-                let isDuplicate = false;
+        for (let i = 0; i < removeDuplicateTransactionIdsReqDTO.depositList.length; i++) {
+            let isDuplicate = false;
 
-                for (let j = 0; j < removeDuplicateTransactionIdsReqDTO.transactionsIds.length; j++) {
-                    if (removeDuplicateTransactionIdsReqDTO.depositList[i].txid === removeDuplicateTransactionIdsReqDTO.transactionsIds[j]) {
-                        isDuplicate = true;
-                        break;
-                    }
-                }
-
-                if (!isDuplicate) {
-                    filterDepositList.push(removeDuplicateTransactionIdsReqDTO.depositList[i]);
+            for (let j = 0; j < removeDuplicateTransactionIdsReqDTO.transactionsIds.length; j++) {
+                if (removeDuplicateTransactionIdsReqDTO.depositList[i].txid === removeDuplicateTransactionIdsReqDTO.transactionsIds[j]) {
+                    isDuplicate = true;
+                    break;
                 }
             }
 
-            return plainToInstance(RemoveDuplicateTransactionIdsResDTO, { filterDepositList }, { exposeUnsetFields: false });
-        } catch (error) {
-            console.error(error.message);
-            throw new Error('failed to get deposit list transaction ids.');
+            if (!isDuplicate) {
+                filterDepositList.push(removeDuplicateTransactionIdsReqDTO.depositList[i]);
+            }
         }
+
+        return plainToInstance(RemoveDuplicateTransactionIdsResDTO, { filterDepositList }, { exposeUnsetFields: false });
     }
 
-    // TODO : return 값 추가
     /**
      * @dev Retrieves the total deposit amount for tokens associated with a specific Croffle address and currency.
      *
@@ -98,10 +109,16 @@ export class DepositService {
      * @param {string} getTotalDepositAmountForTokensReqDTO.croffle_address - The Croffle address to be used for fetching the total deposit amount.
      * @param {CURRENCY} getTotalDepositAmountForTokensReqDTO.currency - The currency type associated with the deposits.
      *
-     * @returns ???
+     * @returns {GetTotalDepositAmountForTokensResDTO}
      */
-    public async getTotalDepositAmountForTokens(getTotalDepositAmountForTokensReqDTO: GetTotalDepositAmountForTokensReqDTO) {
-        return await this.depositList.getTotalDepositAmountForTokensByAddress(getTotalDepositAmountForTokensReqDTO);
+    public async getTotalDepositAmountForTokens(getTotalDepositAmountForTokensReqDTO: GetTotalDepositAmountForTokensReqDTO): Promise<GetTotalDepositAmountForTokensResDTO> {
+        try {
+            const depositSummary = await this.depositList.getTotalDepositAmountForTokensByAddress(getTotalDepositAmountForTokensReqDTO);
+            return plainToInstance(GetTotalDepositAmountForTokensResDTO, depositSummary, { exposeUnsetFields: false });
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.getTotalDepositAmountForTokens.name, error);
+            throw error;
+        }
     }
 
     /**
@@ -111,6 +128,11 @@ export class DepositService {
      * @param {number} updateDepositStatusReqDTO.sq - The sequence number of the deposit to be updated.
      */
     public async updateDepositStatus(updateDepositStatusReqDTO: UpdateDepositStatusReqDTO): Promise<void> {
-        await this.depositList.updateDepositStatus(updateDepositStatusReqDTO);
+        try {
+            await this.depositList.updateDepositStatus(updateDepositStatusReqDTO);
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.updateDepositStatus.name, error);
+            throw error;
+        }
     }
 }

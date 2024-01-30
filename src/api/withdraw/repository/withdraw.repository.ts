@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+
+import { CustomLogger } from 'src/config/logger/custom.logger.config';
 
 import { DataSource, Repository } from 'typeorm';
 import { WithdrawList } from 'src/model/entity/withdraw-list.entity';
@@ -10,7 +12,11 @@ import { GetTotalWithdrawAmountForTokensReqDTO, InsertRefundInformationReqDTO } 
 
 @Injectable()
 export class WithdrawListRepository extends Repository<WithdrawList> {
-    constructor(private dataSource: DataSource) {
+    constructor(
+        @Inject('CROFFLE_BLOCKCHAIN_SERVER_LOG')
+        private readonly logger: CustomLogger,
+        private dataSource: DataSource,
+    ) {
         super(WithdrawList, dataSource.createEntityManager());
     }
 
@@ -23,7 +29,7 @@ export class WithdrawListRepository extends Repository<WithdrawList> {
                 .addSelect('SUM(withdrawList.token_amount)', 'totalTokenAmount')
                 .getRawOne();
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.getTotalWithdrawTokenAmountByCurrencyAndAddress.name, error);
             throw new ResImpl(SELECT_FAILED);
         }
     }
@@ -32,7 +38,7 @@ export class WithdrawListRepository extends Repository<WithdrawList> {
         try {
             await this.insert(insertRefundInformationReqDTO.withdrawList);
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.insertWithdrawList.name, error);
             throw new ResImpl(INSERT_FAILED);
         }
     }

@@ -1,6 +1,6 @@
 export enum METHODS {
-    INCREASETOTALSUPPLY = 'increaseTotalSupply',
-    DECREASETOTALSUPPLY = 'decreaseTotalSupply',
+    INCREASE_TOTALSUPPLY = 'increaseTotalSupply',
+    DECREASE_TOTALSUPPLY = 'decreaseTotalSupply',
     TRANSFER = 'transfer',
 }
 

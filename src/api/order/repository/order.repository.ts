@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { DataSource, Repository } from 'typeorm';
 import { Order } from 'src/model/entity/order.entity';
@@ -9,14 +9,18 @@ import { SELECT_FAILED } from 'src/common/const/error.const';
 import { PayStatus } from 'src/common/const/enum.const';
 
 import { FindOrderWithOrderPayReqDTO } from 'src/api/order/dto/order.req.dto';
+import { CustomLogger } from 'src/config/logger/custom.logger.config';
 
 @Injectable()
 export class OrderRepository extends Repository<Order> {
-    constructor(private dataSource: DataSource) {
+    constructor(
+        @Inject('CROFFLE_BLOCKCHAIN_SERVER_LOG')
+        private readonly logger: CustomLogger,
+        private dataSource: DataSource,
+    ) {
         super(Order, dataSource.createEntityManager());
     }
 
-    // query문 수정
     public async findOrderWithOrderPay(findOrderWithOrderPayReqDTO: FindOrderWithOrderPayReqDTO): Promise<Order> {
         try {
             return await this.createQueryBuilder('order')
@@ -26,7 +30,7 @@ export class OrderRepository extends Repository<Order> {
                 .orderBy('order.insert_dttm', 'DESC')
                 .getOne();
         } catch (error) {
-            console.error(error);
+            this.logger.logError(this.constructor.name, this.findOrderWithOrderPay.name, error);
             throw new ResImpl(SELECT_FAILED);
         }
     }

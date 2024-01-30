@@ -50,13 +50,13 @@ export class CroffleGateway implements OnModuleInit {
 
     @WebSocketServer() server: Server;
     private readonly CROFFLE_CHAIN_WEBSOCKET_RPC: string = this.configService.get<string>('CROFFLE_CHAIN_WEBSOCKET_RPC');
-    private readonly PROXYT_CONTRACT: string = this.configService.get<string>('PROXYT_CONTRACT');
+    private readonly PROXY_CONTRACT: string = this.configService.get<string>('PROXY_CONTRACT');
     private readonly CROFFLE_REFUND_WALLET: string = this.configService.get<string>('CROFFLE_REFUND_WALLET');
     private readonly CROFFLE_PAYMENT_WALLET: string = this.configService.get<string>('CROFFLE_PAYMENT_WALLET');
 
     private readonly provider: ethers.WebSocketProvider = new ethers.WebSocketProvider(this.CROFFLE_CHAIN_WEBSOCKET_RPC);
     private readonly abi: any[] = JSON.parse(fs.readFileSync(`src/config/abi/CroffleStableTokenV1.abi.json`, 'utf8'));
-    private readonly contract: ethers.Contract = new ethers.Contract(this.PROXYT_CONTRACT, this.abi, this.provider);
+    private readonly contract: ethers.Contract = new ethers.Contract(this.PROXY_CONTRACT, this.abi, this.provider);
 
     async subscribeCroffleDeposit() {
         this.contract.on('Transfer', async (from, to, value, event) => {

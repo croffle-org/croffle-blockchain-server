@@ -19,7 +19,7 @@ export class UpbitPostRequestReqDTO {
     body: any;
 }
 
-export class AixosGetRequestReqDTO {
+export class AxiosGetRequestReqDTO {
     @Expose({ name: 'url' })
     @IsString()
     url: string;

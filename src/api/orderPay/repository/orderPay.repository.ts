@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+
+import { CustomLogger } from 'src/config/logger/custom.logger.config';
 
 import { DataSource, Repository } from 'typeorm';
 import { OrderPay } from 'src/model/entity/order-pay.entity';
@@ -10,7 +12,11 @@ import { UpdateOrderPayReqDTO } from 'src/api/orderPay/dto/orderPay.req.dto';
 
 @Injectable()
 export class OrderPayRepository extends Repository<OrderPay> {
-    constructor(private dataSource: DataSource) {
+    constructor(
+        @Inject('CROFFLE_BLOCKCHAIN_SERVER_LOG')
+        private readonly logger: CustomLogger,
+        private dataSource: DataSource,
+    ) {
         super(OrderPay, dataSource.createEntityManager());
     }
 
@@ -25,7 +31,7 @@ export class OrderPayRepository extends Repository<OrderPay> {
                 },
             );
         } catch (error) {
-            console.error(error);
+            this.logger.logError(this.constructor.name, this.updateOrderPay.name, error);
             throw new ResImpl(UPDATE_FAILED);
         }
     }

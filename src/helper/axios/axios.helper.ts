@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
 
-import { AixosGetRequestReqDTO, UpbitGetRequestReqDTO, UpbitPostRequestReqDTO } from 'src/helper/axios/dto/axios.req.dto';
+import { AxiosGetRequestReqDTO, UpbitGetRequestReqDTO, UpbitPostRequestReqDTO } from 'src/helper/axios/dto/axios.req.dto';
 
 import { sign } from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
@@ -66,9 +66,9 @@ export class AxiosHelper {
         }
     }
 
-    public async aixosGetRequest(aixosGetRequestReqDTO: AixosGetRequestReqDTO): Promise<any> {
+    public async axiosGetRequest(axiosGetRequestReqDTO: AxiosGetRequestReqDTO): Promise<any> {
         try {
-            const response = await this.httpService.axiosRef.get(aixosGetRequestReqDTO.url, aixosGetRequestReqDTO.header);
+            const response = await this.httpService.axiosRef.get(axiosGetRequestReqDTO.url, axiosGetRequestReqDTO.header);
             return response.data;
         } catch (error) {
             if (error.response.status !== 401) {

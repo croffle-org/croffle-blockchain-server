@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { DataSource, Repository } from 'typeorm';
 import { DepositList } from 'src/model/entity/deposit-list.entity';
@@ -7,10 +7,15 @@ import { ResImpl } from 'src/common/res/res.implement';
 import { INSERT_FAILED, SELECT_FAILED, UPDATE_FAILED } from 'src/common/const/error.const';
 
 import { GetTotalDepositAmountForTokensReqDTO, StoreDepositListReqDTO, UpdateDepositStatusReqDTO } from 'src/api/deposit/dto/deposit.req.dto';
+import { CustomLogger } from 'src/config/logger/custom.logger.config';
 
 @Injectable()
 export class DepositListRepository extends Repository<DepositList> {
-    constructor(private dataSource: DataSource) {
+    constructor(
+        @Inject('CROFFLE_BLOCKCHAIN_SERVER_LOG')
+        private readonly logger: CustomLogger,
+        private dataSource: DataSource,
+    ) {
         super(DepositList, dataSource.createEntityManager());
     }
 
@@ -18,7 +23,7 @@ export class DepositListRepository extends Repository<DepositList> {
         try {
             await this.createQueryBuilder().insert().into(DepositList).values(storeDepositListReqDTO.depositList).orIgnore().updateEntity(false).execute();
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.storeDepositList.name, error);
             throw new ResImpl(INSERT_FAILED);
         }
     }
@@ -31,7 +36,7 @@ export class DepositListRepository extends Repository<DepositList> {
                 },
             });
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.getPendingDeposits.name, error);
             throw new ResImpl(SELECT_FAILED);
         }
     }
@@ -47,12 +52,12 @@ export class DepositListRepository extends Repository<DepositList> {
                 },
             });
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.getPendingDepositTransactionIds.name, error);
             throw new ResImpl(SELECT_FAILED);
         }
     }
 
-    public async getTotalDepositAmountForTokensByAddress(getTotalDepositAmountForTokensReqDTO: GetTotalDepositAmountForTokensReqDTO) {
+    public async getTotalDepositAmountForTokensByAddress(getTotalDepositAmountForTokensReqDTO: GetTotalDepositAmountForTokensReqDTO): Promise<any> {
         try {
             return await this.createQueryBuilder('depositList')
                 .where('depositList.currency = :currency', { currency: getTotalDepositAmountForTokensReqDTO.currency })
@@ -61,7 +66,7 @@ export class DepositListRepository extends Repository<DepositList> {
                 .addSelect('SUM(depositList.krw_amount)', 'totalAmount')
                 .getRawOne();
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.getTotalDepositAmountForTokensByAddress.name, error);
             throw new ResImpl(SELECT_FAILED);
         }
     }
@@ -72,7 +77,7 @@ export class DepositListRepository extends Repository<DepositList> {
                 status: true,
             });
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.updateDepositStatus.name, error);
             throw new ResImpl(UPDATE_FAILED);
         }
     }

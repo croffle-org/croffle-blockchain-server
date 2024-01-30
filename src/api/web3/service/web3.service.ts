@@ -1,14 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { EthersHelper } from 'src/helper/ethers/ethers.helper';
 
 import { plainToInstance } from 'class-transformer';
 import { AdjustTotalSupplyReqDTO, TransferToTotalSupplyManagerReqDTO, TransferToUserReqDTO } from 'src/api/web3/dto/web3.req.dto';
 import { GetTotalSupplyResDTO } from 'src/api/web3/dto/web3.res.dto';
+import { CustomLogger } from 'src/config/logger/custom.logger.config';
 
 @Injectable()
 export class Web3Service {
-    constructor(private readonly ethersHelper: EthersHelper) {}
+    constructor(
+        @Inject('CROFFLE_BLOCKCHAIN_SERVER_LOG')
+        private readonly logger: CustomLogger,
+        private readonly ethersHelper: EthersHelper,
+    ) {}
 
     /**
      * @dev Fetches the total supply of the token.
@@ -17,8 +22,13 @@ export class Web3Service {
      * @returns {number} GetTotalSupplyResDTO.total_supply - Total supply of the token.
      */
     public async getTotalSupply(): Promise<GetTotalSupplyResDTO> {
-        const total_supply = await this.ethersHelper.getTotalSupply();
-        return plainToInstance(GetTotalSupplyResDTO, { total_supply }, { exposeUnsetFields: false });
+        try {
+            const total_supply = await this.ethersHelper.getTotalSupply();
+            return plainToInstance(GetTotalSupplyResDTO, { total_supply }, { exposeUnsetFields: false });
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.getTotalSupply.name, error);
+            throw error;
+        }
     }
 
     /**
@@ -30,7 +40,12 @@ export class Web3Service {
      *
      */
     public async adjustTotalSupply(adjustTotalSupplyReqDTO: AdjustTotalSupplyReqDTO): Promise<void> {
-        await this.ethersHelper.adjustTotalSupply(adjustTotalSupplyReqDTO);
+        try {
+            await this.ethersHelper.adjustTotalSupply(adjustTotalSupplyReqDTO);
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.adjustTotalSupply.name, error);
+            throw error;
+        }
     }
 
     /**
@@ -40,7 +55,12 @@ export class Web3Service {
      * @param {DepositList} TransferToUserReqDTO.deposit - The deposit details for which tokens need to be transferred.
      */
     public async transferToUser(transferToUserReqDTO: TransferToUserReqDTO): Promise<void> {
-        this.ethersHelper.transferToUser(transferToUserReqDTO);
+        try {
+            await this.ethersHelper.transferToUser(transferToUserReqDTO);
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.transferToUser.name, error);
+            throw error;
+        }
     }
 
     /**
@@ -50,6 +70,11 @@ export class Web3Service {
      * @param {string} TransferToTotalSupplyManagerReqDTO.amount - The amount of tokens to transfer to the Total Supply Manager.
      */
     public async transferToTotalSupplyManager(transferToTotalSupplyManagerReqDTO: TransferToTotalSupplyManagerReqDTO): Promise<void> {
-        this.ethersHelper.transferToTotalSupplyManager(transferToTotalSupplyManagerReqDTO);
+        try {
+            await this.ethersHelper.transferToTotalSupplyManager(transferToTotalSupplyManagerReqDTO);
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.transferToTotalSupplyManager.name, error);
+            throw error;
+        }
     }
 }

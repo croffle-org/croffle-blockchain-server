@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { InjectRepository } from '@nestjs/typeorm';
 import { AccountWalletRepository } from 'src/api/accounts/repository/accounts.repository';
@@ -7,12 +7,15 @@ import { DepositList } from 'src/model/entity/deposit-list.entity';
 
 import { plainToInstance } from 'class-transformer';
 
-import { GetAccountWalletByUpbitAddressReqDTO, GetCroffleAddressReqDTO, GetWalletInfoReqDTO } from 'src/api/accounts/dto/accounts.req.dto';
+import { GetCroffleAddressReqDTO, GetWalletInfoReqDTO } from 'src/api/accounts/dto/accounts.req.dto';
 import { GetCroffleAddressResDTO, GetWalletInfoResDTO } from 'src/api/accounts/dto/accounts.res.dto';
+import { CustomLogger } from 'src/config/logger/custom.logger.config';
 
 @Injectable()
 export class AccountsService {
     constructor(
+        @Inject('CROFFLE_BLOCKCHAIN_SERVER_LOG')
+        private readonly logger: CustomLogger,
         @InjectRepository(AccountWalletRepository)
         private readonly accountWallet: AccountWalletRepository,
     ) {}
@@ -28,11 +31,16 @@ export class AccountsService {
      * @returns {AccountWallet} GetWalletInfoResDTO.walletInfo - Detailed information of the user's wallet.
      */
     public async getWalletInfo(getWalletInfoReqDTO: GetWalletInfoReqDTO): Promise<GetWalletInfoResDTO> {
-        const walletInfo: AccountWallet = await this.accountWallet.getWalletInfoByAddressAndCurrency(getWalletInfoReqDTO);
-        return plainToInstance(GetWalletInfoResDTO, { walletInfo }, { exposeUnsetFields: false });
+        this.logger.logMethodEntry(this.constructor.name, this.getWalletInfo.name, getWalletInfoReqDTO);
+        try {
+            const walletInfo: AccountWallet = await this.accountWallet.getWalletInfoByAddressAndCurrency(getWalletInfoReqDTO);
+            return plainToInstance(GetWalletInfoResDTO, { walletInfo }, { exposeUnsetFields: false });
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.getWalletInfo.name, error);
+            throw error;
+        }
     }
 
-    // TODO : 예외처리 코드 수정
     /**
      * @dev Retrieves the associated Croffle address for a given Upbit address from the deposit list.
      *
@@ -43,27 +51,30 @@ export class AccountsService {
      * @returns {DepositList[]} GetCroffleAddressResDTO.depositsListWithCroffleAddress - List of deposits each with its associated Croffle address.
      */
     public async getCroffleAddress(getCroffleAddressReqDTO: GetCroffleAddressReqDTO): Promise<GetCroffleAddressResDTO> {
+        this.logger.logMethodEntry(this.constructor.name, this.getCroffleAddress.name, getCroffleAddressReqDTO);
+
         const instances: DepositList[] = [];
 
-        for (const deposit of getCroffleAddressReqDTO.depositList) {
-            try {
-                const getAccountWalletByUpbitAddressReqDTO = plainToInstance(GetAccountWalletByUpbitAddressReqDTO, { upbit_address: deposit.upbit_address }, { exposeUnsetFields: false });
-                const instance: AccountWallet = await this.accountWallet.getAccountWalletByUpbitAddress(getAccountWalletByUpbitAddressReqDTO);
-
-                if (instance) {
-                    instances.push(plainToInstance(DepositList, { ...deposit, croffle_address: instance.croffle_address }, { exposeUnsetFields: false }));
-                } else {
-                    throw new Error('등록되지 않은 업비트 주소입니다.');
+        try {
+            for (const deposit of getCroffleAddressReqDTO.depositList) {
+                try {
+                    const instance: AccountWallet = await this.accountWallet.getAccountWalletByUpbitAddress({
+                        upbit_address: deposit.upbit_address,
+                    });
+                    if (instance) {
+                        instances.push(plainToInstance(DepositList, { ...deposit, croffle_address: instance.croffle_address }, { exposeUnsetFields: false }));
+                    }
+                } catch (error) {
+                    this.logger.logError(this.constructor.name, this.getCroffleAddress.name, error);
                 }
-            } catch (error) {
-                console.error(error.message);
             }
+            if (instances.length === 0) {
+                throw new Error('유효한 크로플 지갑 주소를 찾지 못하였습니다.');
+            }
+            return plainToInstance(GetCroffleAddressResDTO, { depositsListWithCroffleAddress: instances }, { exposeUnsetFields: false });
+        } catch (error) {
+            this.logger.logError(this.constructor.name, this.getCroffleAddress.name, error);
+            throw error;
         }
-
-        if (instances.length === 0) {
-            throw new Error('No valid instances found.');
-        }
-
-        return plainToInstance(GetCroffleAddressResDTO, { depositsListWithCroffleAddress: instances }, { exposeUnsetFields: false });
     }
 }

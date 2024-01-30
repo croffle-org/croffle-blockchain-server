@@ -3,6 +3,7 @@ import { Body, Controller, Get, Post } from '@nestjs/common';
 import { UpbitService } from 'src/api/upbit/service/upbit.service';
 
 import { ResImpl } from 'src/common/res/res.implement';
+import { Res } from 'src/common/res/res.interface';
 import { SUCCESS } from 'src/common/const/error.const';
 
 import { SetUpbitJwtReqDTO } from 'src/api/upbit/dto/upbit.req.dto';
@@ -14,15 +15,12 @@ export class UpbitController {
     @Post('/set/token')
     async setUpbitJwt(@Body() setUpbitJwtReqDTO: SetUpbitJwtReqDTO) {
         await this.upbitService.setUpbitJwt(setUpbitJwtReqDTO);
-
         return new ResImpl({ ...SUCCESS });
     }
 
-    // TODO : return 값 수정 보류
     @Get('/get/token')
-    async getUpbitJwt(): Promise<ResImpl> {
+    async getUpbitJwt(): Promise<Res> {
         const token = await this.upbitService.getUpbitJwt();
-
         return new ResImpl({ ...SUCCESS, data: { token } });
     }
 }
