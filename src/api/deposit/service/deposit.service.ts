@@ -7,7 +7,7 @@ import { DepositList } from 'src/model/entity/deposit-list.entity';
 import { plainToInstance } from 'class-transformer';
 
 import { GetTotalDepositAmountForTokensReqDTO, RemoveDuplicateTransactionIdsReqDTO, StoreDepositListReqDTO, UpdateDepositStatusReqDTO } from 'src/api/deposit/dto/deposit.req.dto';
-import { getPendingDepositTransactionIdsResDTO, GetPendingDepositsResDTO, RemoveDuplicateTransactionIdsResDTO, GetTotalDepositAmountForTokensResDTO } from 'src/api/deposit/dto/deposit.res.dto';
+import { GetPendingDepositTransactionIdsResDTO, GetPendingDepositsResDTO, RemoveDuplicateTransactionIdsResDTO, GetTotalDepositAmountForTokensResDTO } from 'src/api/deposit/dto/deposit.res.dto';
 import { CustomLogger } from 'src/config/logger/custom.logger.config';
 
 @Injectable()
@@ -58,13 +58,13 @@ export class DepositService {
     /**
      * @dev Retrieves a list of transaction IDs for deposits that are currently pending.
      *
-     * @returns {getPendingDepositTransactionIdsResDTO} A data transfer object containing an array of pending deposit transaction IDs.
+     * @returns {GetPendingDepositTransactionIdsResDTO} A data transfer object containing an array of pending deposit transaction IDs.
      * @returns {string[]} GetDepositTransactionIdsResDTO.transactionsIds - An array of strings, each representing a transaction ID of a pending deposit.
      */
-    public async getPendingDepositTransactionIds(): Promise<getPendingDepositTransactionIdsResDTO> {
+    public async getPendingDepositTransactionIds(): Promise<GetPendingDepositTransactionIdsResDTO> {
         try {
             const depositTransactionIds: DepositList[] = await this.depositList.getPendingDepositTransactionIds();
-            return plainToInstance(getPendingDepositTransactionIdsResDTO, { depositTransactionIds }, { exposeUnsetFields: false });
+            return plainToInstance(GetPendingDepositTransactionIdsResDTO, { depositTransactionIds }, { exposeUnsetFields: false });
         } catch (error) {
             this.logger.logError(this.constructor.name, this.getPendingDepositTransactionIds.name, error);
             throw error;

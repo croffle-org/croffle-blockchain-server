@@ -1,5 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 
+import { CustomLoggerModule } from 'src/module/custom.logger.module';
+
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DepositList } from 'src/model/entity/deposit-list.entity';
 import { AccountWallet } from 'src/model/entity/account-wallet.entity';
@@ -16,7 +18,7 @@ import { Web3Scheduler } from 'src/api/web3/scheduler/web3.scheduler';
 import { EthersHelper } from 'src/helper/ethers/ethers.helper';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([DepositList, AccountWallet]), CacheModule.register({ useClass: CacheConfig }), forwardRef(() => DepositModule), UpbitModule],
+    imports: [CustomLoggerModule, TypeOrmModule.forFeature([DepositList, AccountWallet]), CacheModule.register({ useClass: CacheConfig }), forwardRef(() => DepositModule), UpbitModule],
     providers: [Web3Service, Web3Scheduler, EthersHelper],
     exports: [Web3Service],
 })

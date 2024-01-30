@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 
 import { Web3Service } from 'src/api/web3/service/web3.service';
@@ -8,10 +8,16 @@ import { AdjustTotalSupplyReqDTO } from 'src/api/web3/dto/web3.req.dto';
 import { GetTotalSupplyResDTO } from 'src/api/web3/dto/web3.res.dto';
 import { GetKrwAmountResDTO } from 'src/api/upbit/dto/upbit.res.dto';
 import { plainToInstance } from 'class-transformer';
+import { CustomLogger } from 'src/config/logger/custom.logger.config';
 
 @Injectable()
 export class Web3Scheduler {
-    constructor(private readonly upbitService: UpbitService, private readonly web3Service: Web3Service) {}
+    constructor(
+        @Inject('CROFFLE_BLOCKCHAIN_SERVER_LOG')
+        private readonly logger: CustomLogger,
+        private readonly upbitService: UpbitService,
+        private readonly web3Service: Web3Service,
+    ) {}
 
     private isRunning = false;
 
@@ -34,7 +40,8 @@ export class Web3Scheduler {
                 await this.web3Service.adjustTotalSupply(adjustTotalSupplyReqDTO);
             }
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.checkAmount.name, error);
+            throw error;
         } finally {
             this.isRunning = false;
         }

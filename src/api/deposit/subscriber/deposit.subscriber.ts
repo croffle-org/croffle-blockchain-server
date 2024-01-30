@@ -9,10 +9,18 @@ import { plainToInstance } from 'class-transformer';
 import { UpdateDepositStatusReqDTO } from 'src/api/deposit/dto/deposit.req.dto';
 import { GetPendingDepositsResDTO } from 'src/api/deposit/dto/deposit.res.dto';
 import { TransferToUserReqDTO } from 'src/api/web3/dto/web3.req.dto';
+import { CustomLogger } from 'src/config/logger/custom.logger.config';
+import { Inject } from '@nestjs/common';
 
 @EventSubscriber()
 export class DepositListSubscriber implements EntitySubscriberInterface<DepositList> {
-    constructor(private connection: Connection, private readonly depositService: DepositService, private readonly web3Service: Web3Service) {
+    constructor(
+        @Inject('CROFFLE_BLOCKCHAIN_SERVER_LOG')
+        private readonly logger: CustomLogger,
+        private connection: Connection,
+        private readonly depositService: DepositService,
+        private readonly web3Service: Web3Service,
+    ) {
         this.connection.subscribers.push(this);
     }
 
@@ -33,7 +41,8 @@ export class DepositListSubscriber implements EntitySubscriberInterface<DepositL
                 await this.depositService.updateDepositStatus(updateDepositStatusReqDTO);
             }
         } catch (error) {
-            console.error(error.message);
+            this.logger.logError(this.constructor.name, this.afterInsert.name, error);
+            throw error;
         }
     }
 }

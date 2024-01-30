@@ -3,7 +3,7 @@ import { IsArray, IsNumber } from 'class-validator';
 
 import { DepositList } from 'src/model/entity/deposit-list.entity';
 
-export class getPendingDepositTransactionIdsResDTO {
+export class GetPendingDepositTransactionIdsResDTO {
     @Expose({ name: 'transactionsIds' })
     @IsArray()
     transactionsIds: string[];

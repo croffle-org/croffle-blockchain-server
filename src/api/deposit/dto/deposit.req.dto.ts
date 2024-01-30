@@ -4,7 +4,7 @@ import { CURRENCY } from 'src/common/const/enum.const';
 
 import { DepositList } from 'src/model/entity/deposit-list.entity';
 
-import { getPendingDepositTransactionIdsResDTO } from 'src/api/deposit/dto/deposit.res.dto';
+import { GetPendingDepositTransactionIdsResDTO } from 'src/api/deposit/dto/deposit.res.dto';
 
 export class StoreDepositListReqDTO {
     @Expose({ name: 'depositList' })
@@ -18,7 +18,7 @@ export class StoreDepositListReqDTO {
     maticPrice: number;
 }
 
-export class RemoveDuplicateTransactionIdsReqDTO extends getPendingDepositTransactionIdsResDTO {
+export class RemoveDuplicateTransactionIdsReqDTO extends GetPendingDepositTransactionIdsResDTO {
     @Expose({ name: 'depositList' })
     @ValidateNested({ each: true })
     @Type(() => DepositList)
