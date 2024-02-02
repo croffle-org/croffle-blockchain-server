@@ -16,7 +16,7 @@ import { PayModule } from 'src/api/pay/pay.module';
 import { UpbitModule } from 'src/api/upbit/upbit.module';
 import { Web3Module } from 'src/api/web3/web3.module';
 import { WithdrawModule } from 'src/api/withdraw/withdraw.module';
-import { CroffleGatewayModule } from 'src/websockets/croffle/croffle.gateway.module';
+import { CroffleGatewayModule } from 'src/websocket/croffle/croffle.gateway.module';
 
 import { HealthController } from 'src/api/health.controller';
 

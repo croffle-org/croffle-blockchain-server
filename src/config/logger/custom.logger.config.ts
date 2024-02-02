@@ -41,11 +41,11 @@ export class CustomLogger extends Logger {
         const errorLocation = errorLocationMatch ? `Location: ${errorLocationMatch[1]}:${errorLocationMatch[2]}` : 'Location: unavailable';
 
         // 최종 로그 메시지 구성
-        const logMessage = `Error Method Name : ${methodName} | ${errorMessage} | ${errorLocation}`;
+        const logMessage = `Error Method : ${methodName} | ${errorMessage} \n ${errorLocation}`;
 
         if (this.environment === 'development') {
             // 개발 환경에서는 전체 스택 트레이스를 디버그 레벨로 로깅
-            super.debug(`${logMessage} | Full Stack: ${error.stack}`, className);
+            super.debug(`${logMessage} \n Full Stack: ${error.stack}`, className);
         } else {
             // 운영 환경에서는 간소화된 에러 정보만 로깅
             super.error(logMessage, null, className);

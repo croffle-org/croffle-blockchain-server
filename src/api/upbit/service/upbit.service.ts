@@ -142,7 +142,7 @@ export class UpbitService {
             const response = await this.axiosHelper.upbitGetRequest(upbitGetRequestReqDTO);
 
             const recentDepositList = response.filter((transaction) => {
-                return transaction.txid.startsWith('upbit') && new Date(transaction.done_at).getTime() > Date.now() - 10000 * 60 * 60 * 1000;
+                return transaction.txid.startsWith('upbit') && new Date(transaction.done_at).getTime() > Date.now() - 12 * 60 * 60 * 1000;
             });
 
             return plainToInstance(GetRecentUpbitMaticDepositsResDTO, { recentDepositList }, { exposeUnsetFields: false });

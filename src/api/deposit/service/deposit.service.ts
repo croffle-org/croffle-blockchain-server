@@ -64,7 +64,7 @@ export class DepositService {
     public async getPendingDepositTransactionIds(): Promise<GetPendingDepositTransactionIdsResDTO> {
         try {
             const depositTransactionIds: DepositList[] = await this.depositList.getPendingDepositTransactionIds();
-            return plainToInstance(GetPendingDepositTransactionIdsResDTO, { depositTransactionIds }, { exposeUnsetFields: false });
+            return plainToInstance(GetPendingDepositTransactionIdsResDTO, { transactionsIds: depositTransactionIds }, { exposeUnsetFields: false });
         } catch (error) {
             this.logger.logError(this.constructor.name, this.getPendingDepositTransactionIds.name, error);
             throw error;

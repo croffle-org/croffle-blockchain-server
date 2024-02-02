@@ -17,7 +17,7 @@ import { WithdrawModule } from 'src/api/withdraw/withdraw.module';
 import { UpbitModule } from 'src/api/upbit/upbit.module';
 import { Web3Module } from 'src/api/web3/web3.module';
 
-import { CroffleGateway } from 'src/websockets/croffle/gateway/croffle.gateway';
+import { CroffleGateway } from 'src/websocket/croffle/gateway/croffle.gateway';
 
 import { AxiosHelper } from 'src/helper/axios/axios.helper';
 import { PayModule } from 'src/api/pay/pay.module';

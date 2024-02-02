@@ -41,13 +41,14 @@ export class UpbitScheduler {
             if (getRecentUpbitMaticDepositsResDTO.recentDepositList.length === 0) return;
 
             const getPendingDepositTransactionIdsResDTO: GetPendingDepositTransactionIdsResDTO = await this.depositService.getPendingDepositTransactionIds();
+            if (getPendingDepositTransactionIdsResDTO.transactionsIds.length) return;
             const removeDuplicateTransactionIdsReqDTO = plainToInstance(
                 RemoveDuplicateTransactionIdsReqDTO,
                 { depositList: getRecentUpbitMaticDepositsResDTO.recentDepositList, transactionIds: getPendingDepositTransactionIdsResDTO.transactionsIds },
                 { exposeUnsetFields: false },
             );
 
-            const removeDuplicateTransactionIdsResDTO: RemoveDuplicateTransactionIdsResDTO = await this.depositService.removeDuplicateTransactionIds(removeDuplicateTransactionIdsReqDTO);
+            const removeDuplicateTransactionIdsResDTO: RemoveDuplicateTransactionIdsResDTO = this.depositService.removeDuplicateTransactionIds(removeDuplicateTransactionIdsReqDTO);
             if (removeDuplicateTransactionIdsResDTO.filterDepositList.length === 0) return;
 
             const getMaticPriceResDTO: GetMaticPriceResDTO = await this.upbitService.getMaticPrice();
